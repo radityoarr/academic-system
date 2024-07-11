@@ -1,197 +1,1000 @@
 <?php
 
-//Koneksi ke Database
-$db = mysqli_connect("localhost", "root", "", "db_store");
+function koneksi() {
+    $serverName = "RADITYO-PC"; 
+    $connectionOptions = array(
+        "Database" => "DBAkademik" 
+    );
 
+    $conn = sqlsrv_connect($serverName, $connectionOptions);
 
-// function query
-function query($query)
-{
-    global $db;
-    $result = mysqli_query($db, $query);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    return $conn;
+}
+
+function query($query) {
+    $conn = koneksi();
+    $result = sqlsrv_query($conn, $query);
+    if ($result === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
     $rows = [];
-    while ($row = mysqli_fetch_assoc($result)) {
+    while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
         $rows[] = $row;
     }
+
+    sqlsrv_free_stmt($result);
+    sqlsrv_close($conn);
+
     return $rows;
 }
 
-function queryy($queryy)
-{
-    global $db;
-    $resultt = mysqli_query($db, $queryy);
-    $rowss = [];
-    while ($roww = mysqli_fetch_assoc($resultt)) {
-        $rowss[] = $roww;
-    }
-    return $rowss;
-}
 
+function tambah_dosen($data) {
+    $conn = koneksi();
 
-// tambah data keranjang
-function add($data)
-{
-    global $db;
-    //ambil dari data dari tiap elemen dalam form
-    $id = $data["id_barang"];
-    $nama = $data["nama_barang"];
-    $harga = $data["harga_barang"];
-    $jumlah = $data["jumlah"];
-    $stok = $data["stok_barang"];
+    // sanitasi data
+    $id = htmlspecialchars($data['ID_Dosen']);
+    $nama = htmlspecialchars($data['Nama']);
+    $alamat = htmlspecialchars($data['Alamat']);
 
-    $ambil = $db->query("SELECT * FROM keranjang WHERE id_barang =$id");
-    while($pecah = $ambil->fetch_assoc()) {
-        $jumlahlama = $pecah['jumlah_barang'];
-    }
-    $get = $ambil->num_rows;
-    if($get>=1){
-                //query insert data
-                $query = "UPDATE keranjang SET jumlah_barang = $jumlahlama+$jumlah WHERE id_barang = $id ";
-    }
-    else{
-        //query insert data
-        $query = "INSERT INTO keranjang 
-        VALUES ('',$id,'$nama',$harga, $jumlah, $stok)";
-    }
+    // Periksa apakah ID Dosen sudah ada
+    $check_query = "SELECT COUNT(*) AS count FROM Dosen WHERE ID_Dosen = ?";
+    $check_params = array($id);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
     
-    mysqli_query($db, $query);
-
-    return mysqli_affected_rows($db);
-}
-
-
-// hapus data keranjang
-function del($data)
-{
-    global $db;
-    //ambil dari data dari tiap elemen dalam form
-    $id = $data["id_keranjang"];
-    
-    //query insert data
-    $query = "DELETE FROM keranjang WHERE id=$id";
-    mysqli_query($db, $query);
-
-    return mysqli_affected_rows($db);
-}
-
-// Update data keranjang
-function update($data)
-{
-    global $db;
-    //ambil dari data dari tiap elemen dalam form
-    $id = $data["id_keranjang"];
-    $jumlah = $data["jumlah_barang"];
-    
-    //query insert data
-    $query = "UPDATE keranjang SET jumlah_barang = $jumlah WHERE id = $id ";
-    mysqli_query($db, $query);
-
-    return mysqli_affected_rows($db);
-}
-
-
-// Buy
-function buy($data)
-{
-    global $db;
-    $id_karyawan=$_SESSION['admin']['id'];
-    //ambil dari data dari tiap elemen dalam form
-    $ambil=$db->query("SELECT * FROM transaksi");
-    $idnew = 1;
-    while ($pecah = $ambil->fetch_assoc()) {
-        $idnew++;
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
     }
 
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
 
-   
-        //query insert daata to transaksi
-        $query = "INSERT INTO transaksi VALUES ($idnew,0,NOW(),$id_karyawan)";
-        mysqli_query($db, $query);
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
 
+    sqlsrv_free_stmt($check_stmt);
 
-        //query insert daata to detail transaksi
-        $ambilkeranjang=$db->query("SELECT * FROM keranjang");
-        while ($cut = $ambilkeranjang->fetch_assoc()) {
-        $id=$cut['id_barang'];
-        $jumlah = $cut['jumlah_barang'];
-        $sub = $cut['harga_barang'] * $jumlah;
+    if ($count > 0) {
+        // ID Dosen sudah ada, tampilkan pesan error
+        echo '<script>
+        swal("Oops!", "ID Dosen Sudah Terdapat Dalam Database!", "error")
+        .then((value) => {
+            window.history.back();
+        });
+        </script>';
+        return false;
+    }
 
-        $query = "INSERT INTO detail_transaksi VALUES ($idnew,$id,$sub,$jumlah)";
-        mysqli_query($db, $query);
+    // query INSERT
+    $query = "INSERT INTO Dosen (ID_Dosen, Nama, Alamat) VALUES (?, ?, ?)";
+    $params = array($id, $nama, $alamat);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
 
-        }
-        $query = "DELETE FROM keranjang";
-        mysqli_query($db, $query);
-
-
-    return mysqli_affected_rows($db);
+    return $rowsAffected;
 }
 
 
-// hapus data keranjang
-function restok($data)
-{
-    global $db;
-    //ambil dari data dari tiap elemen dalam form
-    $id = $data["id_barang"];
-    $tambah = $data["stok_tambahan"];
-    
-    //query insert data
-    $query = "INSERT INTO tambah_stok VALUES ('',$id,$tambah,'NOW()')";
-    mysqli_query($db, $query);
+function hapus_dosen($id_dosen) {
+    $conn = koneksi();
 
-    return mysqli_affected_rows($db);
-}
+    $id = htmlspecialchars($id_dosen);
 
-// Change barang
-function change($data)
-{
-    global $db;
-    //ambil dari data dari tiap elemen dalam form
-    $id = $data["id_barang"];
-    $nama = $data["nama_barang"];
-    $harga = $data["harga_barang"];
-    $kadaluarsa = $data["kadaluarsa"];
+    $query = "DELETE FROM Dosen WHERE ID_Dosen = ?";
+    $params = array($id);
     
-    //query insert data
-    $query = "UPDATE barang SET 
-    nama_barang='$nama', 
-    harga_barang=$harga,
-    kadaluarsa='$kadaluarsa'
-    WHERE id_barang=$id";
-    mysqli_query($db, $query);
+    $stmt = sqlsrv_prepare($conn, $query, $params);
 
-    return mysqli_affected_rows($db);
-}
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
 
-function delbarang($data)
-{
-    global $db;
-    //ambil dari data dari tiap elemen dalam form
-    $id = $data["id_barang"];
-    $nama = $data["nama_barang"];
-    $harga = $data["harga_barang"];
-    $stok = $data["stok"];
-    $kadaluarsa = $data["kadaluarsa"];
-    
-    $query = "INSERT INTO barangterhapus VALUES($id,'$nama',$harga,$stok,'$kadaluarsa')";
-    mysqli_query($db, $query);
-    
-    
-       
+    if (sqlsrv_execute($stmt) === false) {
+        $errors = sqlsrv_errors();
+        $errorCode = $errors[0]['code'];
+        $errorMessage = $errors[0]['message'];
+        sqlsrv_free_stmt($stmt);
+        sqlsrv_close($conn);
+        return array('success' => false, 'code' => $errorCode, 'message' => $errorMessage);
+    }
 
-    return mysqli_affected_rows($db);
-}
-function balik($data)
-{
-    global $db;
-    
-       
+    $rowsAffected = sqlsrv_rows_affected($stmt);
 
-    return mysqli_affected_rows($db);
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return array('success' => true, 'rowsAffected' => $rowsAffected);
 }
 
 
+function ubah_dosen($data) {
+    $conn = koneksi();
+
+    // sanitasi data
+    $id = htmlspecialchars($data['ID_Dosen']);
+    $nama = htmlspecialchars($data['Nama']);
+    $alamat = htmlspecialchars($data['Alamat']);
+
+    // query
+    $query = "UPDATE Dosen SET Nama = ?, Alamat = ? WHERE ID_Dosen = ?";
+    $params = array($nama, $alamat, $id);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    } 
+    
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return $rowsAffected;
+}
+
+function tambah_mk($data) {
+    $conn = koneksi();
+  
+    // sanitasi data
+    $id = htmlspecialchars($data['ID_MK']);
+    $nama = htmlspecialchars($data['Nama']);
+    $sks = htmlspecialchars($data['Sks']);
+
+    $check_query = "SELECT COUNT(*) AS count FROM MataKuliah WHERE ID_MK = ?";
+    $check_params = array($id);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
+    
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
+
+    sqlsrv_free_stmt($check_stmt);
+
+    if ($count > 0) {
+        echo '<script>
+        swal("Oops!", "ID Mata Kuliah Sudah Terdapat Dalam Database!", "error")
+        .then((value) => {
+            window.history.back();
+        });
+        </script>';
+        return false;
+    }
+
+    if (!is_numeric($sks) || $sks < 1 || $sks > 6 || !ctype_digit($sks)) {
+        echo '<script>
+        swal({
+            title: "Oops!",
+            text: "Input Bobot SKS Tidak Valid!",
+            icon: "error",
+            button: "OK"
+        });
+        </script>';
+        return false;
+    }
+  
+    // query
+    $query = "INSERT INTO MataKuliah (ID_MK, Nama, Sks) VALUES (?, ?, ?)";
+    $params = array($id, $nama, $sks);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    } 
+    
+    return $rowsAffected;
+  }
+  
+  function hapus_mk($id_mk) {
+    $conn = koneksi();
+
+    $id = htmlspecialchars($id_mk);
+
+    $query = "DELETE FROM MataKuliah WHERE ID_MK = ?";
+    $params = array($id);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($stmt) === false) {
+        $errors = sqlsrv_errors();
+        $errorCode = $errors[0]['code'];
+        $errorMessage = $errors[0]['message'];
+        sqlsrv_free_stmt($stmt);
+        sqlsrv_close($conn);
+        return array('success' => false, 'code' => $errorCode, 'message' => $errorMessage);
+    }
+
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return array('success' => true, 'rowsAffected' => $rowsAffected);
+}
+
+  
+  
+  
+function ubah_mk($data) {
+    $conn = koneksi();
+
+    // sanitasi data
+    if (!isset($data['ID_MK']) || !isset($data['Nama']) || !isset($data['Sks'])) {
+        die("Invalid data: ID_MK, Nama, or Sks not set.");
+    }
+
+    $id = htmlspecialchars($data['ID_MK']);
+    $nama = htmlspecialchars($data['Nama']);
+    $sks = htmlspecialchars($data['Sks']);
 
 
+    // query
+    $query = "UPDATE MataKuliah SET Nama = ?, Sks = ? WHERE ID_MK = ?";
+    $params = array($nama, $sks, $id);
+
+    // Cek koneksi sebelum prepare statement
+    if (!$conn) {
+        die("Connection failed: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+
+    return $rowsAffected;
+}
+
+  function tambah_depart($data) {
+    $conn = koneksi();
+  
+    // sanitasi data
+    $id_dept = htmlspecialchars($data['ID_Dept']);
+    $id_dosen = htmlspecialchars($data['ID_Dosen']);
+    $nama = htmlspecialchars($data['Nama']);
+    $sekre = htmlspecialchars($data['Sekretariat']);
+
+    $check_query = "SELECT COUNT(*) AS count FROM Departemen WHERE ID_Dept = ?";
+    $check_params = array($id_dept);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
+    
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
+
+    sqlsrv_free_stmt($check_stmt);
+
+    if ($count > 0) {
+        echo '<script>
+        swal("Oops!", "ID Departemen Sudah Terdapat Dalam Database!", "error")
+        .then((value) => {
+            window.history.back();
+        });
+        </script>';
+        return false;
+    }
+  
+    // query
+    $query = "INSERT INTO Departemen (ID_Dept, ID_Dosen, Nama, Sekretariat) VALUES (?, ?, ?, ?)";
+    $params = array($id_dept, $id_dosen, $nama, $sekre);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    return $rowsAffected;
+  }
+  
+  function hapus_depart($id_depart) {
+      $conn = koneksi();
+      $id = htmlspecialchars($id_depart);
+  
+      $query = "DELETE FROM Departemen WHERE ID_Dept = ?";
+      $params = array($id);
+      
+      $stmt = sqlsrv_prepare($conn, $query, $params);
+      
+      if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+      }
+      
+      if (sqlsrv_execute($stmt) === false) {
+          die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+      }
+      
+      $rowsAffected = sqlsrv_rows_affected($stmt);
+      
+      if ($rowsAffected === false) {
+          die(print_r(sqlsrv_errors(), true));
+      }
+      
+      sqlsrv_free_stmt($stmt);
+      sqlsrv_close($conn);
+  
+      return $rowsAffected;
+  }
+  
+  
+  
+  function ubah_depart($data) {
+      $conn = koneksi();
+  
+      // sanitasi data
+      $id_dept = htmlspecialchars($data['ID_Dept']);
+      $id_dosen = htmlspecialchars($data['ID_Dosen']);
+      $nama = htmlspecialchars($data['Nama']);
+      $sekre = htmlspecialchars($data['Sekretariat']);
+  
+      // query
+      $query = "UPDATE Departemen SET ID_Dosen = ?, Nama = ?, Sekretariat = ? WHERE ID_Dept = ?";
+      $params = array($id_dosen, $nama, $sekre, $id_dept);
+      
+      $stmt = sqlsrv_prepare($conn, $query, $params);
+      
+      if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+      }
+      
+      if (sqlsrv_execute($stmt) === false) {
+          die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+      }
+      
+      $rowsAffected = sqlsrv_rows_affected($stmt);
+      
+      if ($rowsAffected === false) {
+          die(print_r(sqlsrv_errors(), true));
+      }
+      
+      sqlsrv_free_stmt($stmt);
+      sqlsrv_close($conn);
+  
+      return $rowsAffected;
+  }
+  function tambah_mhs($data) {
+    $conn = koneksi();
+  
+    // sanitasi data
+    $nrp = htmlspecialchars($data['NRP']);
+    $nrp_komting = htmlspecialchars($data['NRP_Komting']);
+    $id_dosen = htmlspecialchars($data['ID_Dosen']);
+    $nama = htmlspecialchars($data['Nama']);
+    $alamat = htmlspecialchars($data['Alamat']);
+
+    // Periksa apakah ID Dosen sudah ada
+    $check_query = "SELECT COUNT(*) AS count FROM Mahasiswa WHERE NRP = ?";
+    $check_params = array($nrp);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
+    
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
+
+    sqlsrv_free_stmt($check_stmt);
+
+    if ($count > 0) {
+        echo '<script>
+        swal("Oops!", "NRP Sudah Terdapat Dalam Database!", "error")
+        .then((value) => {
+            window.history.back();
+        });
+        </script>';
+        return false;
+    }
+  
+    // query
+    $query = "INSERT INTO Mahasiswa (NRP, NRP_Komting, ID_Dosen, Nama, Alamat) VALUES (?, ?, ?, ?, ?)";
+    $params = array($nrp, $nrp_komting, $id_dosen, $nama, $alamat);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    return $rowsAffected;
+  }
+  
+  function hapus_mhs($nrp) {
+    $conn = koneksi();
+    $id = htmlspecialchars($nrp);
+
+    $query = "DELETE FROM Mahasiswa WHERE NRP = ?";
+    $params = array($id);
+
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($stmt) === false) {
+        $errors = sqlsrv_errors();
+        $errorCode = $errors[0]['code'];
+        $errorMessage = $errors[0]['message'];
+        sqlsrv_free_stmt($stmt);
+        sqlsrv_close($conn);
+        return array('success' => false, 'code' => $errorCode, 'message' => $errorMessage);
+    }
+
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return array('success' => true, 'rowsAffected' => $rowsAffected);
+}
+
+  
+  
+  
+  function ubah_mhs($data) {
+    $conn = koneksi();
+  
+      // sanitasi data
+      $nrp = htmlspecialchars($data['NRP']);
+      $nrp_komting = htmlspecialchars($data['NRP_Komting']);
+      $id_dosen = htmlspecialchars($data['ID_Dosen']);
+      $nama = htmlspecialchars($data['Nama']);
+      $alamat = htmlspecialchars($data['Alamat']);
+  
+      // query
+      $query = "UPDATE Mahasiswa SET NRP_komting = ? , ID_Dosen = ?, Nama = ?, Alamat = ? WHERE NRP = ?";
+      $params = array($nrp_komting, $id_dosen, $nama, $alamat, $nrp);
+      
+      $stmt = sqlsrv_prepare($conn, $query, $params);
+      
+      if ($stmt === false) {
+          die(print_r(sqlsrv_errors(), true));
+      }
+      
+      if (sqlsrv_execute($stmt) === false) {
+          die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+      }
+      
+      $rowsAffected = sqlsrv_rows_affected($stmt);
+      
+      if ($rowsAffected === false) {
+          die(print_r(sqlsrv_errors(), true));
+      } 
+      
+      sqlsrv_free_stmt($stmt);
+      sqlsrv_close($conn);
+  
+      return $rowsAffected;
+  }
+
+  function hapus_ambilmk($id_mk, $nrp) {
+    $conn = koneksi();
+
+    $id = htmlspecialchars($id_mk);
+    $nrp = htmlspecialchars($nrp);
+
+
+    $query = "DELETE FROM AmbilMK WHERE ID_MK = ? AND NRP = ?";
+    $params = array($id, $nrp);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return $rowsAffected;
+}
+
+function tambah_ambilmk($data) {
+    $conn = koneksi();
+  
+    $id = htmlspecialchars($data['ID_MK']);
+    $nrp = htmlspecialchars($data['NRP']);
+
+    $check_query = "SELECT COUNT(*) AS count FROM AmbilMK WHERE ID_MK = ? AND NRP = ?";
+    $check_params = array($id, $nrp);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
+    
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
+
+    sqlsrv_free_stmt($check_stmt);
+
+    if ($count > 0) {
+        echo '<script>
+        swal("Oops!", "Mahasiswa Sudah Mengambil Mata Kuliah Terkait!", "error")
+        .then((value) => {
+            window.history.back();
+        });
+        </script>';
+        return false;
+    }
+  
+    $query = "INSERT INTO AmbilMK (NRP, ID_MK) VALUES (?, ?)";
+    $params = array($nrp, $id);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    } 
+    
+    return $rowsAffected;
+  }
+
+  function hapus_bimbingan($id_dosen, $nrp) {
+    $conn = koneksi();
+
+    $id = htmlspecialchars($id_dosen);
+    $nrp = htmlspecialchars($nrp);
+
+
+    $query = "DELETE FROM Bimbingan WHERE ID_Dosen = ? AND NRP = ?";
+    $params = array($id, $nrp);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return $rowsAffected;
+}
+
+function hapus_asistensi($nrp, $nrp_asisten) {
+    $conn = koneksi();
+
+    $nrp_asisten = htmlspecialchars($nrp_asisten);
+    $nrp = htmlspecialchars($nrp);
+
+
+    $query = "DELETE FROM Asistensi WHERE NRP = ? AND NRP_Asisten = ?";
+    $params = array($nrp, $nrp_asisten);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+
+    return $rowsAffected;
+}
+
+function tambah_bimbingan($data) {
+    $conn = koneksi();
+  
+    $id = htmlspecialchars($data['ID_Dosen']);
+    $nrp = htmlspecialchars($data['NRP']);
+    $periode = htmlspecialchars($data['Periode']);
+
+    $check_query = "SELECT COUNT(*) AS count FROM Bimbingan WHERE ID_Dosen = ? AND NRP = ?";
+    $check_params = array($id, $nrp);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
+    
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
+
+    sqlsrv_free_stmt($check_stmt);
+
+    if ($count > 0) {
+        echo '<script>
+        swal({
+            title: "Oops!",
+            text: "Mahasiswa Sudah Bimbingan dengan Dosen Tersebut!",
+            icon: "error",
+            button: "OK"
+        });
+        </script>';
+        return false;
+    }
+  
+    $query = "INSERT INTO Bimbingan (ID_Dosen ,NRP, Periode) VALUES (?, ?, ?)";
+    $params = array($id, $nrp, $periode);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    } 
+    
+    return $rowsAffected;
+}
+
+
+
+
+
+
+function tambah_asistensi($data) {
+    $conn = koneksi();
+  
+    $nrp = htmlspecialchars($data['NRP']);
+    $nrp_asisten = htmlspecialchars($data['NRP_Asisten']);
+    $periode = htmlspecialchars($data['Periode']);
+
+    $check_query = "SELECT COUNT(*) AS count FROM Asistensi WHERE NRP_Asisten = ? AND NRP = ?";
+    $check_params = array($nrp_asisten, $nrp);
+
+    $check_stmt = sqlsrv_prepare($conn, $check_query, $check_params);
+    
+    if ($check_stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($check_stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $count = 0;
+    while ($row = sqlsrv_fetch_array($check_stmt, SQLSRV_FETCH_ASSOC)) {
+        $count = $row['count'];
+    }
+
+    sqlsrv_free_stmt($check_stmt);
+
+    if ($count > 0) {
+        echo '<script>
+        swal({
+            title: "Oops!",
+            text: "Mahasiswa Sudah Asistensi dengan Asisten Tersebut!",
+            icon: "error",
+            button: "OK"
+        });
+        </script>';
+        return false;
+    }
+  
+    $query = "INSERT INTO Asistensi (NRP, NRP_Asisten, Periode) VALUES (?, ?, ?)";
+    $params = array($nrp, $nrp_asisten, $periode);
+    
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+    
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+    
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+    
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    } 
+    
+    return $rowsAffected;
+  }
+
+  function hitung_predikat($nilai_angka) {
+    if ($nilai_angka >= 86 && $nilai_angka <= 100) {
+        return 'A';
+    } elseif ($nilai_angka >= 76 && $nilai_angka <= 85) {
+        return 'AB';
+    } elseif ($nilai_angka >= 66 && $nilai_angka <= 75) {
+        return 'B';
+    } elseif ($nilai_angka >= 61 && $nilai_angka <= 65) {
+        return 'BC';
+    } elseif ($nilai_angka >= 56 && $nilai_angka <= 60) {
+        return 'C';
+    } elseif ($nilai_angka >= 41 && $nilai_angka <= 55) {
+        return 'D';
+    } elseif ($nilai_angka >= 0 && $nilai_angka <= 40) {
+        return 'E';
+    } else {
+        return 'Invalid';
+    }
+}
+
+function nilai($data) {
+    $conn = koneksi();
+
+    $id = htmlspecialchars($data['ID_MK']);
+    $nrp = htmlspecialchars($data['NRP']);
+    $nilai = htmlspecialchars($data['Nilai_Angka']);
+    $predikat = hitung_predikat($nilai);
+
+    $query = "UPDATE AmbilMK SET Nilai_Angka = ?, Predikat = ? WHERE ID_MK = ? AND NRP = ?";
+    $params = array($nilai, $predikat, $id, $nrp);
+
+    if (!$conn) {
+        die("Connection failed: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+    return $rowsAffected;
+}
+
+
+function ubah_periode($data) {
+    $conn = koneksi();
+
+    $id_dosen = htmlspecialchars($data['ID_Dosen']);
+    $nrp = htmlspecialchars($data['NRP']);
+    $periode = htmlspecialchars($data['Periode']);
+
+
+    $query = "UPDATE Bimbingan SET Periode = ? WHERE ID_Dosen = ? AND NRP = ?";
+    $params = array($periode, $id_dosen, $nrp);
+
+    if (!$conn) {
+        die("Connection failed: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+
+    return $rowsAffected;
+}
+
+function ubah_periode_asistensi($data) {
+    $conn = koneksi();
+
+    $nrp = htmlspecialchars($data['NRP']);
+    $nrp_asisten = htmlspecialchars($data['NRP_Asisten']);
+    $periode = htmlspecialchars($data['Periode']);
+
+
+    $query = "UPDATE Asistensi SET Periode = ? WHERE NRP_Asisten = ? AND NRP = ?";
+    $params = array($periode, $nrp_asisten, $nrp);
+
+    if (!$conn) {
+        die("Connection failed: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $stmt = sqlsrv_prepare($conn, $query, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    if (sqlsrv_execute($stmt) === false) {
+        die("Query Gagal! Error: " . print_r(sqlsrv_errors(), true));
+    }
+
+    $rowsAffected = sqlsrv_rows_affected($stmt);
+
+    if ($rowsAffected === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    sqlsrv_free_stmt($stmt);
+
+    return $rowsAffected;
+}
 ?>

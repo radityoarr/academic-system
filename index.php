@@ -1,17 +1,31 @@
 <?php
+    require 'functions.php';
+    $conn = koneksi();
+    $item = 1;
 
-session_start();
-// koneksi
-require 'functions.php';
-
-// cek user login
-
-if (!isset($_SESSION['admin'])) {
-    header("Location: login.php");
-    exit;
-}
-$item = 1;
-
+    $queries = array(
+        "SELECT COUNT(*) AS total FROM Mahasiswa",
+        "SELECT COUNT(*) AS total FROM Dosen",
+        "SELECT COUNT(*) AS total FROM Departemen",
+        "SELECT COUNT(*) AS total FROM MataKuliah",
+        "SELECT COUNT(*) AS total FROM AmbilMK",
+        "SELECT COUNT(*) AS total FROM Bimbingan",
+        "SELECT COUNT(*) AS total FROM Asistensi",
+      );
+      
+      $totals = array();
+      foreach ($queries as $query) {
+        $result = sqlsrv_query($conn, $query);
+        if ($result === false) {
+          die(print_r(sqlsrv_errors(), true));
+        }
+        $data = sqlsrv_fetch_array($result);
+        $totals[] = $data['total'];
+        sqlsrv_free_stmt($result); // Free the statement resource
+      }
+      
+      list($totalData1, $totalData2, $totalData3, $totalData4, $totalData5, $totalData6, $totalData7) = $totals;
+      
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,6 +41,20 @@ $item = 1;
     <link rel="shortcut icon" href="assets/images/logo/favicon.png?<?php echo time(); ?>" type="image/png" />
 
     <link rel="stylesheet" href="assets/css/shared/iconly.css?<?php echo time(); ?>" />
+    <style>
+
+        .card {
+            transition: background-color 0.3s ease;
+        }
+
+        .card:hover {
+            background-color: #8297e5;
+        }
+        body.theme-dark .card:hover {
+            background-color: #6c757d; 
+        }
+
+    </style>
 </head>
 
 <body>
@@ -39,21 +67,8 @@ $item = 1;
                 </a>
             </header>
 
-            <?php 
-            $ambil=$db->query("SELECT * FROM transaksi ");
-            $tot = 0;
-            while($pecah = $ambil->fetch_assoc()) {
-            $tot = $tot + 1; 
-            }?>
-            <?php 
-            $ambils=$db->query("SELECT * FROM barang WHERE stok_barang<20 ");
-            $stoks = 0;
-            while($pecah = $ambils->fetch_assoc()) {
-            $stoks = $stoks + 1; 
-            }?>
-
             <div class="page-heading">
-                <h3>Profile Penjualan</h3>
+                <h3>Dashboard Akademik</h3>
             </div>
             <div class="page-content">
                 <section class="row">
@@ -62,7 +77,27 @@ $item = 1;
                             <div class="col-6 col-lg-3 col-md-6">
                                 <div class="card">
                                     <div class="card-body px-4 py-4-5">
-                                        <a href="tabeltransaksi.php">
+                                        <a href="tabel_mhs.php">
+                                            <div class="row">
+                                                <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                                    <div class="stats-icon blue mb-2 ">
+                                                        <i class="iconly-boldBookmark"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                                    <h6 class="text-muted font-semibold">Mahasiswa</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData1; ?></h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-6 col-lg-3 col-md-6">
+                                <div class="card">
+                                    <div class="card-body px-4 py-4-5">
+                                        <a href="tabel_dosen.php">
                                             <div class="row">
                                                 <div
                                                     class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
@@ -71,178 +106,129 @@ $item = 1;
                                                     </div>
                                                 </div>
                                                 <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                                    <h6 class="text-muted font-semibold">Totals</h6>
-                                                    <h6 class="font-extrabold mb-0"><?php echo $tot?></h6>
+                                                    <h6 class="text-muted font-semibold">Dosen</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData2; ?></h6>
                                                 </div>
                                             </div>
                                         </a>
                                     </div>
                                 </div>
+
                             </div>
+
                             <div class="col-6 col-lg-3 col-md-6">
                                 <div class="card">
                                     <div class="card-body px-4 py-4-5">
-                                        <a href="barangrestok.php">
+                                        <a href="tabel_depart.php">
                                             <div class="row">
-
                                                 <div
-                                                    class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex  justify-content-start">
+                                                    class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
                                                     <div class="stats-icon purple mb-2">
-                                                        <i class="iconly-boldShow"></i>
+                                                        <i class="iconly-boldBookmark"></i>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                                    <h6 class="text-muted font-semibold">Restock</h6>
-                                                    <h6 class="font-extrabold mb-0"><?php echo $stoks?></h6>
+                                                    <h6 class="text-muted font-semibold">Departemen</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData3; ?></h6>
                                                 </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <div class="col-6 col-lg-3 col-md-6">
+                                <div class="card">
+                                    <div class="card-body px-4 py-4-5">
+                                        <a href="tabel_mk.php">
+                                            <div class="row">
+                                                <div
+                                                    class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                                    <div class="stats-icon green mb-2">
+                                                        <i class="iconly-boldBookmark"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                                    <h6 class="text-muted font-semibold">Mata Kuliah</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData4; ?></h6>
+                                                </div>
                                             </div>
                                         </a>
                                     </div>
                                 </div>
 
                             </div>
-                            <!-- <div class="col-12 pt-10 col-lg-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h4>Sales Comparison</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="chart-visitors-profile"></div>
-                                    </div>
-                                </div>
-                            </div> -->
 
-                        </div>
-                        <div class="row">
-                            <div class="col-12">
+                            <div class="col-6 col-lg-3 col-md-6">
                                 <div class="card">
-                                    <div class="card-header">
-                                        <h4>Penjualan Barang</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="chart-profile-visit"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 col-xl-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h4>Count Sales</h4>
-                                        </h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <?php $ambilkaryawan=$db->query("SELECT * FROM karyawan");
-                                        $cek = 0;
-                                        while($pecahkaryawan = $ambilkaryawan->fetch_assoc()) {?>
-
-
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="d-flex align-items-center">
-                                                    <svg class="bi text-primary" width="32" height="32" fill="blue"
-                                                        style="width: 10px">
-                                                        <use
-                                                            xlink:href="assets/images/bootstrap-icons.svg#circle-fill" />
-                                                    </svg>
-                                                    <h5 class="mb-0 ms-3"><?php echo $pecahkaryawan['username'];
-                                                    $cek++; ?></h5>
+                                    <div class="card-body px-4 py-4-5">
+                                        <a href="tabel_ambilmk.php">
+                                            <div class="row">
+                                                <div
+                                                    class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                                    <div class="stats-icon blue mb-2">
+                                                        <i class="iconly-boldBookmark"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                                    <h6 class="text-muted font-semibold">Ambil MK</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData5; ?></h6>
                                                 </div>
                                             </div>
-                                            <?php $id=$pecahkaryawan['id'];
-                                            $ambilpenjualan=$db->query("SELECT * FROM transaksi where id_karyawan=$id");
-                                            $total = 0;
-                                            while($pecahpenjualan = $ambilpenjualan->fetch_assoc()) {
-                                            $total++;
-                                             }?>
-                                            <div class="col-6">
-                                                <h5 class="mb-0"><?= $total ?></h5>
-                                            </div>
-                                            <?php if($cek==1){?>
-                                            <div class="col-12">
-                                                <div id="chart-europe"></div>
-                                            </div>
-                                            <?php }
-                                            else if($cek==2){?>
-                                            <div class="col-12">
-                                                <div id="chart-america"></div>
-                                            </div>
-                                            <?php }
-                                            else
-                                            {?>
-                                            <div class="col-12">
-                                                <div id="chart-indonesia"></div>
-                                            </div>
-                                            <?php  }?>
-
-                                        </div>
-                                        <?php }?>
+                                        </a>
                                     </div>
                                 </div>
+
                             </div>
-                            <div class="col-12 col-xl-4">
+
+                            <div class="col-6 col-lg-3 col-md-6">
                                 <div class="card">
-                                    <div class="card-header">
-                                        <h4>Daftar Karyawan</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover table-lg">
-                                                <!-- <thead>
-                                                    <tr>
-                                                        <th>Name</th>
-                                                    </tr>
-                                                </thead> -->
-                                                <tbody>
-
-                                                    <?php $ambilkaryawans=$db->query("SELECT * FROM karyawan");
-                                                $id = 0;
-                                                while($pecahkaryawans = $ambilkaryawans->fetch_assoc()) {
-                                                        $id++; ?>
-
-                                                    <tr>
-                                                        <td class="col-3">
-                                                            <div class="d-flex align-items-center">
-                                                                <div class="avatar avatar-md">
-                                                                    <img src="assets/images/logo/favicon.png" />
-                                                                </div>
-                                                                <p class="font-bold ms-3 mb-0">
-                                                                    <?= $pecahkaryawans['username']?></p>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <?php }?>
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                    <div class="card-body px-4 py-4-5">
+                                        <a href="tabel_bimbingan.php">
+                                            <div class="row">
+                                                <div
+                                                    class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                                    <div class="stats-icon red mb-2">
+                                                        <i class="iconly-boldBookmark"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                                    <h6 class="text-muted font-semibold">Bimbingan</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData6; ?></h6>
+                                                </div>
+                                            </div>
+                                        </a>
                                     </div>
                                 </div>
+
                             </div>
-                            <div class="col-12 pt-10 col-lg-4">
+
+                            <div class="col-6 col-lg-3 col-md-6">
                                 <div class="card">
-                                    <div class="card-header">
-                                        <h4>Sales Comparison</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="chart-visitors-profile"></div>
+                                    <div class="card-body px-4 py-4-5">
+                                        <a href="tabel_asistensi.php">
+                                            <div class="row">
+                                                <div
+                                                    class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                                    <div class="stats-icon purple mb-2">
+                                                        <i class="iconly-boldBookmark"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                                    <h6 class="text-muted font-semibold">Asistensi</h6>
+                                                    <h6 class="font-extrabold mb-0 count"><?= $totalData7; ?></h6>
+                                                </div>
+                                            </div>
+                                        </a>
                                     </div>
                                 </div>
+
                             </div>
-                            
+
                         </div>
-                    </div>
                 </section>
             </div>
 
-            <footer>
-                <div class="footer clearfix mb-0 text-muted">
-                    <div class="float-end">
-                        <p>2024 &copy; Radityo Ar Rasyid</p>
-                    </div>
-                </div>
-            </footer>
         </div>
     </div>
     <script src="assets/js/bootstrap.js"></script>
@@ -250,7 +236,6 @@ $item = 1;
 
     <!-- Need: Apexcharts -->
     <script src="assets/extensions/apexcharts/apexcharts.min.js"></script>
-    <?php require'assets/js/pages/dashboard.php';?>
 </body>
 
 </html>

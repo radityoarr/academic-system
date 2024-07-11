@@ -1,17 +1,7 @@
 <?php
-
-session_start();
-// koneksi
-require 'functions.php';
-
-// cek user login
-
-if (!isset($_SESSION['admin'])) {
-    header("Location: login.php");
-    exit;
-}
-$item = 2;
-$id=$_GET['id']; 
+    require 'functions.php';
+    $dosen = query("SELECT * FROM Dosen");
+    $item = 3;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,7 +9,7 @@ $id=$_GET['id'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Transaksi</title>
+    <title>Data Dosen</title>
     <style>
         th {
             white-space: nowrap;
@@ -28,6 +18,24 @@ $id=$_GET['id'];
         td {
             white-space: nowrap;
             text-align: center !important;
+        }
+        .tr-bold {
+            font-weight: bold;
+        }
+        .btn-edit {
+            background-color: yellow;
+            padding: 5px 10px;
+            border: 1px solid black;
+            text-decoration: none;
+            color: black;
+        }
+
+        .btn-delete {
+            background-color: red;
+            padding: 5px 10px;
+            border: 1px solid black;
+            text-decoration: none;
+            color: white;
         }
     </style>
 
@@ -56,14 +64,14 @@ $id=$_GET['id'];
                 <div class="page-title">
                     <div class="row">
                         <div class="col-12 col-md-6 order-md-1 order-last">
-                            <h3>Table Detail Transaksi</h3>
-                            <p class="text-subtitle text-muted">Data transaksi dengan id = <?=$id?></p>
+                            <h3>Tabel Data Dosen</h3>
+                            <!-- <p class="text-subtitle text-muted">Data-data barang yang tersedia</p> -->
                         </div>
                         <div class="col-12 col-md-6 order-md-2 order-first">
                             <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                                 <ol class="breadcrumb">
                                     <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Detail Transaksi</li>
+                                    <li class="breadcrumb-item active" aria-current="page">Data Dosen</li>
                                 </ol>
                             </nav>
                         </div>
@@ -77,47 +85,45 @@ $id=$_GET['id'];
                             Data-data barang yang tersedia
                         </div> -->
                         <div class="card-body">
+                            <div class="buttons">
+                                <a href="tambah_dosen.php">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tambah Dosen<span class="badge bg-transparent"></span>
+                                    </button>
+                                </a>
+                            </div>
                             <table class="table" id="table1">
+
                                 <thead>
-                                    <tr>
-                                        <th>ID Transaksi</th>
-                                        <th>Nama Barang </th>
-                                        <th>Harga Satuan </th>
-                                        <th>Jumlah</th>
-                                        <th>Subtotal</th>
+                                    <tr class="tr-bold">
+                                        <td>ID Dosen</td>
+                                        <td>Nama Dosen</td>
+                                        <td>Alamat Dosen</td>
+                                        <td>Action</td>
                                     </tr>
                                 </thead>
+
                                 <tbody>
-                                    <?php $ambil=$db->query("SELECT * FROM detail_transaksi WHERE id_transaksi =$id");
-                                    $tot = 0;
-                                     while($pecah = $ambil->fetch_assoc()) {?>
+                                    <?php
+                                        $i = 1;
+                                        foreach ($dosen as $row) :
+                                    ?>
                                     <tr>
-                                        <td><?php echo $pecah['id_Transaksi'];?></td>
-
-                                        <?php
-                                        $idbar = $pecah['id_barang'];
-                                        $ambilnama=$db->query("SELECT * FROM barang WHERE id_barang =$idbar");
-                                        
-                                         while($pecahnama = $ambilnama->fetch_assoc()) {?>
-                                        <td><?php echo $pecahnama['nama_barang'];?></td>
-
-                                        <td>Rp. <?php echo $pecahnama['harga_barang'];?></td>
-                                        <?php }?>
-                                        <td><?php echo $pecah['Jumlah'];?></td>
-                                        <td>Rp. <?php echo $pecah['subtotal'];
-                                        $tot = $tot + $pecah['subtotal'];?></td>
-
+                                        <td><?= $row["ID_Dosen"]; ?></td>
+                                        <td><?= $row["Nama"]; ?></td>
+                                        <td><?= $row["Alamat"]; ?></td>
+                                        <td>
+                                            <a href="ubah_dosen.php?ID_Dosen=<?= $row['ID_Dosen']; ?>" class="btn-edit">Edit</a>
+                                            <a href="hapus_dosen.php?ID_Dosen=<?= $row['ID_Dosen']; ?>" class="btn-delete">Delete</a>
+                                        </td>
                                     </tr>
-                                    <?php }?>
-                                    <tr>
-                                        <td colspan="4"> <b>Total Transaksi</b></td>
-                                        <td><b>Rp. <?= $tot?></b></td>
-                                    </tr>
+                                    <?php 
+                                        $i++;
+                                        endforeach; 
+                                    ?>
                                 </tbody>
-
                             </table>
                         </div>
-
                     </div>
 
                 </section>
@@ -126,12 +132,8 @@ $id=$_GET['id'];
 
             <footer>
                 <div class="footer clearfix mb-0 text-muted">
-                    <div class="float-start">
-                        <p>2023 &copy; DAAW</p>
-                    </div>
                     <div class="float-end">
-                        <p>Crafted with <span class="text-danger"><i class="bi bi-heart"></i></span> by <a href="#">Duwi
-                                Anjar Ariwibowo</a></p>
+                        <p>2024 &copy; Radityo Ar Rasyid</p>
                     </div>
                 </div>
             </footer>

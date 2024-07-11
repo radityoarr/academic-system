@@ -3,7 +3,7 @@
         <div class="sidebar-header position-relative">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="logo">
-                    <a href="index.php"><?php echo$_SESSION['admin']['username']?></a>
+                    <a href="#">Admin</a>
                 </div>
                 <div class="theme-toggle d-flex gap-2 align-items-center mt-2">
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -61,66 +61,129 @@
 
                 <?php if($item==2){?>
                 <li class="sidebar-item active ">
-                    <a href="tabelbarang.php" class='sidebar-link'>
-                        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
-                        <span>Data Barang</span>
+                    <a href="tabel_mhs.php" class='sidebar-link'>
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>Data Mahasiswa</span>
                     </a>
                 </li>
 
                 <?php }
                 else{ ?>
                 <li class="sidebar-item">
-                    <a href="tabelbarang.php" class='sidebar-link'>
-                        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
-                        <span>Data Barang</span>
+                    <a href="tabel_mhs.php" class='sidebar-link'>
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>Data Mahasiswa</span>
                     </a>
                 </li>
                 <?php } ?>
 
                 <?php if($item==3){?>
                 <li class="sidebar-item active ">
-                    <a href="tabeltransaksi.php?&a=kosong&b=kosong" class='sidebar-link'>
-                        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
-                        <span>Data Transaksi</span>
+                    <a href="tabel_dosen.php" class='sidebar-link'>
+                        <i class="bi bi-person-fill"></i>
+                        <span>Data Dosen</span>
                     </a>
                 </li>
 
                 <?php }
                 else{ ?>
                 <li class="sidebar-item">
-                    <a href="tabeltransaksi.php" class='sidebar-link'>
-                        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
-                        <span>Data Transaksi</span>
+                    <a href="tabel_dosen.php" class='sidebar-link'>
+                        <i class="bi bi-person-fill"></i>
+                        <span>Data Dosen</span>
                     </a>
                 </li>
                 <?php } ?>
 
                 <?php if($item==4){?>
                 <li class="sidebar-item active ">
-                    <a href="jual.php" class='sidebar-link'>
-                        <i class="bi bi-basket-fill"></i>
-                        <span>Check out</span>
+                    <a href="tabel_depart.php" class='sidebar-link'>
+                        <i class="bi bi-building"></i>
+                        <span>Data Departemen</span>
                     </a>
                 </li>
 
                 <?php }
                 else{ ?>
                 <li class="sidebar-item">
-                    <a href="jual.php" class='sidebar-link'>
-                        <i class="bi bi-basket-fill"></i>
-                        <span>Check out</span>
+                    <a href="tabel_depart.php" class='sidebar-link'>
+                        <i class="bi bi-building"></i>
+                        <span>Data Departemen</span>
                     </a>
                 </li>
                 <?php } ?>
 
-                <li class="sidebar-item">
-                    <a href="logout.php" class="sidebar-link">
-                        <i class="bi bi-person-badge-fill"></i>
-                        <span>Logout</span>
+                <?php if($item==5){?>
+                <li class="sidebar-item active ">
+                    <a href="tabel_mk.php" class='sidebar-link'>
+                        <i class="bi bi-book"></i>
+                        <span>Data Mata Kuliah</span>
                     </a>
                 </li>
 
+                <?php }
+                else{ ?>
+                <li class="sidebar-item">
+                    <a href="tabel_mk.php" class='sidebar-link'>
+                        <i class="bi bi-book"></i>
+                        <span>Data Mata Kuliah</span>
+                    </a>
+                </li>
+                <?php } ?>
 
+                <?php if($item==6){?>
+                <li class="sidebar-item active ">
+                    <a href="tabel_ambilmk.php" class='sidebar-link'>
+                        <i class="bi-journal-bookmark"></i>
+                        <span>Data Ambil MK</span>
+                    </a>
+                </li>
+
+                <?php }
+                else{ ?>
+                <li class="sidebar-item">
+                    <a href="tabel_ambilmk.php" class='sidebar-link'>
+                        <i class="bi-journal-bookmark"></i>
+                        <span>Data Ambil MK</span>
+                    </a>
+                </li>
+                <?php } ?>
+
+                <?php if($item==7){?>
+                <li class="sidebar-item active ">
+                    <a href="tabel_bimbingan.php" class='sidebar-link'>
+                        <i class="bi-people-fill"></i>
+                        <span>Data Bimbingan</span>
+                    </a>
+                </li>
+
+                <?php }
+                else{ ?>
+                <li class="sidebar-item">
+                    <a href="tabel_bimbingan.php" class='sidebar-link'>
+                        <i class="bi-people-fill"></i>
+                        <span>Data Bimbingan</span>
+                    </a>
+                </li>
+                <?php } ?>
+
+                <?php if($item==8){?>
+                <li class="sidebar-item active ">
+                    <a href="tabel_asistensi.php" class='sidebar-link'>
+                        <i class="bi bi-person-check-fill"></i>
+                        <span>Data Asistensi</span>
+                    </a>
+                </li>
+
+                <?php }
+                else{ ?>
+                <li class="sidebar-item">
+                    <a href="tabel_asistensi.php" class='sidebar-link'>
+                        <i class="bi bi-person-check-fill"></i>
+                        <span>Data Asistensi</span>
+                    </a>
+                </li>
+                <?php } ?>
 
 
 

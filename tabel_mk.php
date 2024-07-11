@@ -1,18 +1,7 @@
 <?php
-
-session_start();
-// koneksi
-require 'functions.php';
-
-// cek user login
-
-if (!isset($_SESSION['admin'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$item = 2;
-
+    require 'functions.php';
+    $mk = query("SELECT * FROM MataKuliah");
+    $item = 5;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +9,7 @@ $item = 2;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Barang Perlu Restok</title>
+    <title>Data Mata Kuliah</title>
     <style>
         th {
             white-space: nowrap;
@@ -29,6 +18,24 @@ $item = 2;
         td {
             white-space: nowrap;
             text-align: center !important;
+        }
+        .tr-bold {
+            font-weight: bold;
+        }
+        .btn-edit {
+            background-color: yellow;
+            padding: 5px 10px;
+            border: 1px solid black;
+            text-decoration: none;
+            color: black;
+        }
+
+        .btn-delete {
+            background-color: red;
+            padding: 5px 10px;
+            border: 1px solid black;
+            text-decoration: none;
+            color: white;
         }
     </style>
 
@@ -57,14 +64,14 @@ $item = 2;
                 <div class="page-title">
                     <div class="row">
                         <div class="col-12 col-md-6 order-md-1 order-last">
-                            <h3>Data Barang Perlu Restok</h3>
-                            <p class="text-subtitle text-muted">Data-data barang yang hampir habis</p>
+                            <h3>Tabel Data Mata Kuliah</h3>
+                            <!-- <p class="text-subtitle text-muted">Data-data barang yang tersedia</p> -->
                         </div>
                         <div class="col-12 col-md-6 order-md-2 order-first">
                             <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
                                 <ol class="breadcrumb">
                                     <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Table Restok</li>
+                                    <li class="breadcrumb-item active" aria-current="page">Data Mata Kuliah</li>
                                 </ol>
                             </nav>
                         </div>
@@ -74,38 +81,43 @@ $item = 2;
                 <!-- Basic Tables start -->
                 <section class="section">
                     <div class="card">
-                        <!-- <div class="card-header">
-                            Data-data barang yang tersedia
-                        </div> -->
                         <div class="card-body">
+                            <div class="buttons">
+                                <a href="tambah_mk.php">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tambah Mata Kuliah<span class="badge bg-transparent"></span>
+                                    </button>
+                                </a>
+                            </div>
                             <table class="table" id="table1">
+
                                 <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Harga/pcs</th>
-                                        <th>Stok</th>
-                                        <th>Expired</th>
-                                        <th>Action</th>
+                                    <tr class="tr-bold">
+                                        <td>ID Mata Kuliah</td>
+                                        <td>Nama Mata Kuliah</td>
+                                        <td>Bobot SKS</td>
+                                        <td>Action</td>
                                     </tr>
                                 </thead>
+
                                 <tbody>
-                                    <?php $ambil=$db->query("SELECT * FROM barang  WHERE stok_barang<20");?>
-                                    <?php while($pecah = $ambil->fetch_assoc()) {?>
+                                    <?php
+                                        $i = 1;
+                                        foreach ($mk as $row) :
+                                    ?>
                                     <tr>
-                                        <td><?php echo $pecah['id_barang'];?></td>
-                                        <td><?php echo $pecah['nama_barang'];?></td>
-                                        <td>Rp. <?php echo $pecah['harga_barang'];?></td>
-                                        <td><?php echo $pecah['stok_barang'];?></td>
-                                        <td><?php echo $pecah['kadaluarsa'];?></td>
-
+                                        <td><?= $row["ID_MK"]; ?></td>
+                                        <td><?= $row["Nama"]; ?></td>
+                                        <td><?= $row["Sks"]; ?></td>
                                         <td>
-                                            <a href="restok.php?&id=<?php echo $pecah['id_barang'];?>"><span
-                                                    class="badge bg-primary">Tambah Stok</span></a>
-
+                                            <a href="ubah_mk.php?ID_MK=<?= $row['ID_MK']; ?>" class="btn-edit">Edit</a>
+                                            <a href="hapus_mk.php?ID_MK=<?= $row['ID_MK']; ?>" class="btn-delete">Delete</a>
                                         </td>
                                     </tr>
-                                    <?php }?>
+                                    <?php 
+                                        $i++;
+                                        endforeach; 
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -118,7 +130,7 @@ $item = 2;
             <footer>
                 <div class="footer clearfix mb-0 text-muted">
                     <div class="float-end">
-                        <p>2024 &copy;Radityo Ar Rasyid</p>
+                        <p>2024 &copy; Radityo Ar Rasyid</p>
                     </div>
                 </div>
             </footer>
